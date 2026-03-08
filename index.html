@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="金融词汇">
+<meta name="theme-color" content="#0e0f14">
+<link rel="manifest" id="pwa-manifest">
+<title>金融词汇训练营</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Space+Mono:wght@400;700&family=DM+Serif+Display&display=swap');
+
+:root {
+  --bg: #0e0f14;
+  --surface: #16181f;
+  --surface2: #1e2029;
+  --border: #2a2d3a;
+  --gold: #c9a84c;
+  --gold-light: #e8c96a;
+  --gold-dim: #7a6230;
+  --text: #e8e4d9;
+  --text-muted: #8a8578;
+  --green: #4caf7d;
+  --red: #e05c5c;
+  --blue: #5c8de0;
+  --purple: #9b6de0;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Grid background */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ══ HOME SCREEN ══ */
+#home {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.home-header .subtitle {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.home-header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(36px, 6vw, 64px);
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+.home-header h1 span { color: var(--gold); }
+
+.home-header .word-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.home-header .word-count strong { color: var(--gold-light); }
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stat-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 8px 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-chip .val { color: var(--text); font-weight: 700; }
+.stat-chip .dot { width: 7px; height: 7px; border-radius: 50%; }
+.stat-chip .dot.green { background: var(--green); }
+.stat-chip .dot.red { background: var(--red); }
+.stat-chip .dot.gold { background: var(--gold); }
+
+/* Mode grid */
+.modes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.mode-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent, var(--gold)), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.mode-card:hover { border-color: var(--accent, var(--gold)); transform: translateY(-2px); }
+.mode-card:hover::before { opacity: 1; }
+.mode-card:active { transform: translateY(0); }
+
+.mode-card .icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.mode-card h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.mode-card p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.mode-card .badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: var(--accent, var(--gold));
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 1px;
+}
+
+/* Direction selector */
+.direction-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px;
+}
+
+.dir-btn {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dir-btn.active {
+  background: var(--gold);
+  color: var(--bg);
+  font-weight: 700;
+}
+
+/* ══ GAME SCREEN ══ */
+#game {
+  padding: 0;
+}
+
+.game-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.back-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+.game-mode-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.progress-info {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.progress-info strong { color: var(--text); }
+
+/* Progress bar */
+.progress-track {
+  height: 3px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  transition: width 0.4s ease;
+}
+
+/* Main card area */
+.game-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 32px;
+}
+
+/* Flash card */
+.flashcard {
+  width: 100%;
+  max-width: 640px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.flashcard::after {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.card-direction {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.card-question {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(24px, 4vw, 40px);
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.card-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.card-answer {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 20px;
+  color: var(--gold-light);
+  display: none;
+  animation: fadeSlideUp 0.3s ease;
+}
+
+.card-answer.visible { display: block; }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(76,175,125,0.4); }
+  100% { box-shadow: 0 0 0 20px rgba(76,175,125,0); }
+}
+
+.flashcard.correct {
+  border-color: var(--green);
+  animation: pulse-green 0.5s ease;
+}
+
+.flashcard.wrong {
+  border-color: var(--red);
+  animation: shake 0.4s ease;
+}
+
+/* MCQ options */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+}
+
+.option-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.option-btn:hover:not(:disabled) {
+  border-color: var(--gold-dim);
+  background: var(--surface2);
+}
+
+.option-btn.correct { border-color: var(--green); background: rgba(76,175,125,0.12); color: var(--green); }
+.option-btn.wrong { border-color: var(--red); background: rgba(224,92,92,0.12); color: var(--red); }
+.option-btn:disabled { cursor: default; }
+
+/* Spelling input */
+.spell-input-wrap {
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+}
+
+.spell-input {
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 56px 18px 20px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  outline: none;
+  transition: border-color 0.2s;
+  caret-color: var(--gold);
+}
+
+.spell-input:focus { border-color: var(--gold-dim); }
+.spell-input.correct { border-color: var(--green); }
+.spell-input.wrong { border-color: var(--red); }
+
+.spell-submit {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: var(--gold);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg);
+  font-size: 18px;
+  width: 36px; height: 36px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+
+.spell-submit:hover { background: var(--gold-light); }
+
+.spell-feedback {
+  margin-top: 12px;
+  font-size: 13px;
+  text-align: center;
+  min-height: 20px;
+}
+
+.spell-feedback.correct { color: var(--green); }
+.spell-feedback.wrong { color: var(--red); }
+
+/* KN buttons (know/don't know) */
+.kn-buttons {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 640px;
+}
+
+.kn-btn {
+  flex: 1;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.kn-btn.know {
+  background: rgba(76,175,125,0.1);
+  border-color: rgba(76,175,125,0.3);
+  color: var(--green);
+}
+
+.kn-btn.know:hover {
+  background: rgba(76,175,125,0.2);
+  border-color: var(--green);
+}
+
+.kn-btn.unknown {
+  background: rgba(224,92,92,0.1);
+  border-color: rgba(224,92,92,0.3);
+  color: var(--red);
+}
+
+.kn-btn.unknown:hover {
+  background: rgba(224,92,92,0.2);
+  border-color: var(--red);
+}
+
+/* Reveal button */
+.reveal-btn {
+  background: none;
+  border: 1px solid var(--gold-dim);
+  border-radius: 10px;
+  color: var(--gold);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reveal-btn:hover { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+
+/* ══ RESULTS SCREEN ══ */
+#results {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 32px;
+}
+
+.results-header { text-align: center; }
+.results-header .trophy { font-size: 56px; margin-bottom: 16px; display: block; }
+.results-header h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.score-ring {
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  position: relative;
+}
+
+.score-ring .pct {
+  font-family: 'DM Serif Display', serif;
+  font-size: 40px;
+  color: var(--gold);
+}
+
+.score-ring .label {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+}
+
+.results-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.res-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 28px;
+  text-align: center;
+}
+
+.res-stat .num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.res-stat .num.green { color: var(--green); }
+.res-stat .num.red { color: var(--red); }
+
+.res-stat .lbl {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.results-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-primary {
+  background: var(--gold);
+  border: none;
+  border-radius: 10px;
+  color: var(--bg);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover { background: var(--gold-light); }
+
+.btn-secondary {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover { border-color: var(--text-muted); }
+
+/* ══ WRONG WORDS LIST ══ */
+#wronglist {
+  padding: 32px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wrong-words-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.wrong-word-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.wrong-word-item .en {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--text);
+  flex: 1;
+}
+
+.wrong-word-item .zh {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--gold-light);
+}
+
+.wrong-word-item .times {
+  font-size: 11px;
+  color: var(--red);
+  background: rgba(224,92,92,0.1);
+  padding: 3px 8px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; display: block; }
+.empty-state p { font-size: 14px; }
+
+/* ══ ALL WORDS LIST ══ */
+#wordlist {
+  padding: 32px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.search-bar {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 20px;
+  transition: border-color 0.2s;
+  caret-color: var(--gold);
+}
+
+.search-bar:focus { border-color: var(--gold-dim); }
+.search-bar::placeholder { color: var(--text-muted); }
+
+.word-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.word-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: center;
+}
+
+.word-row .en {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.word-row .zh {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 13px;
+  color: var(--gold-light);
+  text-align: right;
+}
+
+/* Notifications */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 13px;
+  color: var(--text);
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  pointer-events: none;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Keyboard hint */
+.kb-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: -16px;
+}
+
+kbd {
+  display: inline-block;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+}
+
+/* Scrollable containers */
+.scrollable {
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+
+/* ══ MOBILE / PWA OPTIMIZATIONS ══ */
+
+/* Safe area insets for iPhone notch/Dynamic Island */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+}
+
+/* Prevent text selection during tap */
+.mode-card, .option-btn, .kn-btn, .dir-btn, .btn-primary, .btn-secondary, .reveal-btn, .back-btn {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Larger tap targets on mobile */
+@media (max-width: 768px) {
+  .mode-card { padding: 20px 18px; }
+
+  .game-topbar {
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+
+  .game-body { padding: 24px 16px; gap: 20px; }
+
+  .flashcard { padding: 32px 22px; border-radius: 16px; }
+  .card-question { font-size: clamp(22px, 5.5vw, 34px); }
+
+  /* Bigger options for fat fingers */
+  .option-btn {
+    padding: 18px 16px;
+    font-size: 14px;
+    min-height: 64px;
+    border-radius: 14px;
+  }
+
+  .options-grid { gap: 10px; }
+
+  /* Swipe hint instead of keyboard hint on mobile */
+  .kb-hint { display: none; }
+  .swipe-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: -8px;
+    letter-spacing: 1px;
+  }
+
+  /* KN buttons taller */
+  .kn-btn { padding: 22px 18px; font-size: 15px; min-height: 68px; }
+
+  /* Spell input larger */
+  .spell-input { font-size: 16px; padding: 20px 56px 20px 18px; } /* 16px prevents iOS zoom */
+
+  /* Bottom nav safe area */
+  .results-actions { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Home padding */
+  #home { padding: 24px 16px; padding-top: calc(24px + env(safe-area-inset-top)); }
+  #wronglist, #wordlist { padding: 20px 16px; padding-top: calc(20px + env(safe-area-inset-top)); }
+
+  .modes-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .stats-bar { gap: 8px; }
+  .stat-chip { padding: 6px 12px; font-size: 11px; }
+
+  /* Scroll momentum */
+  .scrollable { -webkit-overflow-scrolling: touch; }
+
+  /* Results screen */
+  #results { padding: 32px 16px; padding-top: calc(32px + env(safe-area-inset-top)); }
+  .results-stats { gap: 12px; }
+  .res-stat { padding: 16px 20px; }
+
+  /* Direction row */
+  .direction-row { max-width: 100% !important; }
+  .dir-btn { font-size: 11px; padding: 10px 10px; }
+}
+
+/* iPhone SE and smaller */
+@media (max-width: 375px) {
+  .modes-grid { grid-template-columns: 1fr; }
+  .home-header h1 { font-size: 32px; }
+}
+
+/* Swipe gesture overlay for flash/KN cards */
+#swipe-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Card swipe animation */
+.flashcard {
+  transition: transform 0.2s ease, border-color 0.2s, box-shadow 0.2s;
+  will-change: transform;
+}
+
+.flashcard.swipe-right {
+  transform: translateX(60px) rotate(3deg);
+  border-color: var(--green);
+  box-shadow: 0 0 30px rgba(76,175,125,0.2);
+}
+
+.flashcard.swipe-left {
+  transform: translateX(-60px) rotate(-3deg);
+  border-color: var(--red);
+  box-shadow: 0 0 30px rgba(224,92,92,0.2);
+}
+
+/* Swipe indicator labels */
+.swipe-label {
+  position: absolute;
+  top: 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 2px solid;
+}
+
+.swipe-label.know {
+  right: 20px;
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(76,175,125,0.1);
+}
+
+.swipe-label.unknown {
+  left: 20px;
+  color: var(--red);
+  border-color: var(--red);
+  background: rgba(224,92,92,0.1);
+}
+
+/* PWA install banner */
+#install-banner {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface2);
+  border-top: 1px solid var(--gold-dim);
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+  z-index: 500;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+#install-banner.show { display: flex; }
+
+.install-banner-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.install-banner-text strong { color: var(--gold); }
+
+.install-banner-actions { display: flex; gap: 10px; }
+
+.install-btn {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.install-btn.primary { background: var(--gold); color: var(--bg); }
+.install-btn.dismiss { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+
+
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div id="home" class="screen active">
+  <div class="home-header">
+    <div class="subtitle">Financial Vocabulary</div>
+    <h1>金融词汇<br><span>训练营</span></h1>
+    <div class="word-count">共收录 <strong id="total-count">—</strong> 个金融术语</div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-chip"><div class="dot green"></div> 已掌握 <span class="val" id="stat-known">0</span></div>
+    <div class="stat-chip"><div class="dot red"></div> 待加强 <span class="val" id="stat-unknown">0</span></div>
+    <div class="stat-chip"><div class="dot gold"></div> 错题数 <span class="val" id="stat-wrong">0</span></div>
+  </div>
+
+  <div class="direction-row" style="max-width:400px;width:100%">
+    <button class="dir-btn active" onclick="setDir('en2zh')">英 → 中</button>
+    <button class="dir-btn" onclick="setDir('zh2en')">中 → 英</button>
+    <button class="dir-btn" onclick="setDir('mixed')">混合</button>
+  </div>
+
+  <div class="modes-grid">
+    <div class="mode-card" style="--accent:#c9a84c" onclick="startMode('flash')">
+      <span class="icon">🃏</span>
+      <h3>闪卡模式</h3>
+      <p>翻转卡片，自我评估认识程度，快速浏览全部词汇</p>
+    </div>
+    <div class="mode-card" style="--accent:#5c8de0" onclick="startMode('mcq')">
+      <span class="icon">🎯</span>
+      <h3>选择题模式</h3>
+      <p>四选一，测试你的识别能力，带即时反馈</p>
+      <div class="badge">热门</div>
+    </div>
+    <div class="mode-card" style="--accent:#4caf7d" onclick="startMode('spell')">
+      <span class="icon">⌨️</span>
+      <h3>拼写模式</h3>
+      <p>输入英文全称，锻炼拼写记忆，提升书写能力</p>
+    </div>
+    <div class="mode-card" style="--accent:#9b6de0" onclick="startMode('kn')">
+      <span class="icon">✋</span>
+      <h3>认识/不认识</h3>
+      <p>快速分类词汇，建立个人单词本，针对薄弱环节</p>
+    </div>
+    <div class="mode-card" style="--accent:#e05c5c" onclick="startMode('wrong')">
+      <span class="icon">📋</span>
+      <h3>错题本</h3>
+      <p>专项复习你的错误单词，强化薄弱环节</p>
+    </div>
+    <div class="mode-card" style="--accent:#c9a84c" onclick="showScreen('wordlist')">
+      <span class="icon">📚</span>
+      <h3>词汇表</h3>
+      <p>浏览并搜索全部 <span id="wl-count">—</span> 个金融术语</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="game" class="screen">
+  <div class="game-topbar">
+    <button class="back-btn" onclick="goHome()">← 返回</button>
+    <div class="game-mode-label" id="game-mode-label">MODE</div>
+    <div class="progress-info"><strong id="prog-cur">1</strong> / <span id="prog-tot">10</span></div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+  </div>
+
+  <div class="game-body" id="game-body">
+    <!-- Dynamic content injected here -->
+  </div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div id="results" class="screen">
+  <div class="results-header">
+    <span class="trophy" id="res-trophy">🏆</span>
+    <h2 id="res-title">练习完成！</h2>
+  </div>
+
+  <div class="score-ring">
+    <div class="pct" id="res-pct">—</div>
+    <div class="label">正确率</div>
+  </div>
+
+  <div class="results-stats">
+    <div class="res-stat">
+      <span class="num green" id="res-correct">—</span>
+      <span class="lbl">答对</span>
+    </div>
+    <div class="res-stat">
+      <span class="num red" id="res-wrong">—</span>
+      <span class="lbl">答错</span>
+    </div>
+    <div class="res-stat">
+      <span class="num" id="res-total" style="color:var(--text)">—</span>
+      <span class="lbl">总题数</span>
+    </div>
+  </div>
+
+  <div class="results-actions">
+    <button class="btn-primary" onclick="retryMode()">🔁 再来一次</button>
+    <button class="btn-secondary" onclick="retryWrong()">❌ 只练错题</button>
+    <button class="btn-secondary" onclick="goHome()">🏠 返回首页</button>
+  </div>
+</div>
+
+<!-- ══ WRONG LIST ══ -->
+<div id="wronglist" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div class="section-title" style="margin-bottom:0">❌ 错题本</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-primary" onclick="startMode('wrong')" style="font-size:12px;padding:10px 18px">开始专项练习</button>
+      <button class="btn-secondary" onclick="clearWrongList()" style="font-size:12px;padding:10px 18px">清空错题</button>
+      <button class="btn-secondary" onclick="goHome()" style="font-size:12px;padding:10px 18px">← 返回</button>
+    </div>
+  </div>
+  <div class="wrong-words-list scrollable" id="wrong-words-list"></div>
+</div>
+
+<!-- ══ WORD LIST ══ -->
+<div id="wordlist" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;padding:32px 20px 0;max-width:800px;margin-left:auto;margin-right:auto;width:100%">
+    <div class="section-title" style="margin-bottom:0">📚 全部词汇</div>
+    <button class="btn-secondary" onclick="goHome()" style="font-size:12px;padding:10px 18px">← 返回</button>
+  </div>
+  <div style="padding:0 20px 32px;max-width:800px;margin:0 auto;width:100%">
+    <input class="search-bar" id="search-input" placeholder="搜索英文或中文..." oninput="filterWords(this.value)">
+    <div class="word-table scrollable" id="word-table" style="max-height:calc(100vh - 200px)"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- PWA Install Banner (iOS) -->
+<div id="install-banner">
+  <div class="install-banner-text">
+    📱 将此应用<strong>添加到主屏幕</strong>，随时离线背词！<br>
+    <span style="color:var(--text-muted);font-size:11px">点击 Safari 底部 <strong style="color:var(--gold)">分享</strong> → <strong style="color:var(--gold)">添加到主屏幕</strong></span>
+  </div>
+  <div class="install-banner-actions">
+    <button class="install-btn dismiss" onclick="dismissBanner()">稍后再说</button>
+    <button class="install-btn primary" onclick="dismissBanner()">我知道了 ✓</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// VOCABULARY DATA
+// ════════════════════════════════════════
+const VOCAB = [{"en":"variable costs","zh":"变动成本"},{"en":"venture capital","zh":"风险资本"},{"en":"warrants","zh":"认股权证"},{"en":"weak-form effiency","zh":"强型效率"},{"en":"weighted average cost of capital","zh":"加权平均资本成本"},{"en":"white knight","zh":"白衣骑士"},{"en":"zero-balance account","zh":"零余额账户"},{"en":"wire tranfer","zh":"电汇"},{"en":"Yankee bonds","zh":"扬基债券"},{"en":"yield to maturity","zh":"到期收益率"},{"en":"sensitivity analysis","zh":"敏感性分析"},{"en":"shark repellent","zh":"驱鲨计"},{"en":"short hedge","zh":"空头套期保值"},{"en":"shortage costs","zh":"短缺成本"},{"en":"short-run operating activities","zh":"短期经营活动"},{"en":"spot-exchange rate","zh":"即期汇率"},{"en":"simple interest","zh":"单利利息"},{"en":"sole propretorship","zh":"个体业主制"},{"en":"speculating","zh":"投机"},{"en":"spot trades","zh":"即期交易"},{"en":"stated annual interest rate","zh":"名义年利率"},{"en":"stock dividend","zh":"股票股利"},{"en":"stock split","zh":"股票拆细"},{"en":"striking or exercise price","zh":"敲定价格（执行价格）"},{"en":"subordinated","zh":"次级债"},{"en":"subsription price","zh":"认购价"},{"en":"sunk cost","zh":"沉没成本"},{"en":"sustainable growth rate","zh":"可持续增长率"},{"en":"swap rate","zh":"掉期汇率"},{"en":"swaps","zh":"掉期交易"},{"en":"synergy","zh":"协同效应"},{"en":"systematic or market risk","zh":"市场风险（系统性风险）"},{"en":"term structure of interest rates","zh":"利率期限结构"},{"en":"taking delivery","zh":"接受交割"},{"en":"target cash balance","zh":"目标现金余额"},{"en":"tender offer","zh":"要约收购"},{"en":"terms of the sale","zh":"信用条件"},{"en":"total cash flow of the firm","zh":"企业总现金流量"},{"en":"transactions motive","zh":"交易动机"},{"en":"triangular arbitrage","zh":"三角套汇"},{"en":"unsystematic risk","zh":"非系统性风险"},{"en":"value portfolios","zh":"价值型投资组合"},{"en":"value-additivity","zh":"价值可加性"},{"en":"present value","zh":"现值"},{"en":"present value factor","zh":"现值系数"},{"en":"private workout","zh":"私下和解"},{"en":"pro forma statements","zh":"预测报表"},{"en":"profitability index","zh":"盈利指数"},{"en":"prospectus","zh":"招股说明书"},{"en":"protective covenant","zh":"保护性条款"},{"en":"pure discount bonds","zh":"纯贴现债券"},{"en":"put option","zh":"看跌期权"},{"en":"real cash flow","zh":"实际现金流"},{"en":"real interest rate","zh":"实际利率"},{"en":"registration statement","zh":"注册说明书"},{"en":"relative purchasing-power parity,RPPP","zh":"相对购买力平价"},{"en":"repurchase agreement","zh":"回购协议"},{"en":"retained earnings","zh":"留存收益"},{"en":"return on equity,ROE","zh":"股本回报率"},{"en":"rights offer","zh":"配股发行"},{"en":"risk premium","zh":"风险溢价"},{"en":"seasoned new issue","zh":"增发新股"},{"en":"security market line,SML","zh":"证券市场线"},{"en":"selling short","zh":"卖空"},{"en":"semi-strong-form efficiency","zh":"半强型效率"},{"en":"law of price,LOP","zh":"一价定律"},{"en":"London Interbank Offered Rate,LIBOR","zh":"伦敦银行同业拆借利率"},{"en":"long hedge","zh":"多头套期保值"},{"en":"management buyout,MBO","zh":"管理层收购"},{"en":"marginal cost","zh":"边际成本"},{"en":"market capitalization rate","zh":"市场资本化率"},{"en":"market-to-book value","zh":"市净率"},{"en":"maturity factoring","zh":"到期保理"},{"en":"merger","zh":"合并"},{"en":"minimum variance portfolio","zh":"最小方差投资组合"},{"en":"credit analysis","zh":"信用分析"},{"en":"collection policy","zh":"收账政策"},{"en":"accounts payable period","zh":"应付账款期"},{"en":"accrual accounting","zh":"权责发生制会计"},{"en":"acid-test ratio","zh":"速动比率"},{"en":"acquiring firm","zh":"收购方"},{"en":"active portfolio management","zh":"主动型投资组合管理"},{"en":"adjusted present value,APV","zh":"调整现值"},{"en":"aftertax cost of debt","zh":"税后债务成本"},{"en":"agency costs","zh":"代理成本"},{"en":"aging schedule","zh":"账龄分析表"},{"en":"algebraic approach","zh":"代数法"},{"en":"american depository receipts,ADRs","zh":"美国存托凭证"},{"en":"amortization","zh":"摊销"},{"en":"angel investor","zh":"天使投资人"},{"en":"announcement date","zh":"公告日"},{"en":"annuity","zh":"年金"},{"en":"annuity due","zh":"先付年金"},{"en":"arbitrage","zh":"套利"},{"en":"arbitrage pricing theory,APT","zh":"套利定价理论"},{"en":"ask price","zh":"卖出价"},{"en":"asset requirements","zh":"资产需求"},{"en":"assets","zh":"资产"},{"en":"average accounting return,AAR","zh":"平均会计回报率"},{"en":"average collection period","zh":"平均收款期"},{"en":"average daily sales","zh":"日均销售额"},{"en":"balance sheet","zh":"资产负债表"},{"en":"balloon payment","zh":"气球付款"},{"en":"bankruptcy","zh":"破产"},{"en":"basic IRR rule","zh":"基本内部收益率法则"},{"en":"bear hug","zh":"熊抱"},{"en":"best efforts underwriting","zh":"尽力发行"},{"en":"beta","zh":"贝塔系数"},{"en":"bid price","zh":"买入价"},{"en":"bidder firm","zh":"收购方"},{"en":"blanket lien","zh":"一揽子留置权"},{"en":"bond","zh":"债券"},{"en":"book value","zh":"账面价值"},{"en":"borrower","zh":"借款方"},{"en":"break-even analysis","zh":"盈亏平衡分析"},{"en":"business failure","zh":"经营失败"},{"en":"call option","zh":"看涨期权"},{"en":"call protected","zh":"禁止赎回"},{"en":"capital asset pricing model,CAPM","zh":"资本资产定价模型"},{"en":"capital budget","zh":"资本预算"},{"en":"capital gains yield","zh":"资本利得收益率"},{"en":"capital market line,CML","zh":"资本市场线"},{"en":"capital rationing","zh":"资本约束"},{"en":"capital structure","zh":"资本结构"},{"en":"carrying costs","zh":"持有成本"},{"en":"cash budget","zh":"现金预算"},{"en":"cash concentration","zh":"现金归集"},{"en":"cash cow","zh":"现金牛"},{"en":"cash cycle","zh":"现金周期"},{"en":"cash dividend","zh":"现金股利"},{"en":"cash flows from assets","zh":"资产现金流"},{"en":"cash management","zh":"现金管理"},{"en":"clean price","zh":"净价"},{"en":"clientele effect","zh":"顾客效应"},{"en":"collection float","zh":"收账浮差"},{"en":"common-size statements","zh":"共同比报表"},{"en":"comparative advantage","zh":"比较优势"},{"en":"competitive offer","zh":"竞价发行"},{"en":"compound interest","zh":"复利"},{"en":"conditional sales contracts","zh":"有条件销售合同"},{"en":"consol","zh":"永续债券"},{"en":"corporate governance","zh":"公司治理"},{"en":"correlation coefficient","zh":"相关系数"},{"en":"cost of equity capital","zh":"权益资本成本"},{"en":"coupon","zh":"优惠券"},{"en":"covariance","zh":"协方差"},{"en":"covered interest arbitrage","zh":"抵补利率套利"},{"en":"cross-hedging","zh":"交叉套期保值"},{"en":"cumulative abnormal return","zh":"累积超额收益"},{"en":"currency swaps","zh":"货币互换"},{"en":"current ratio","zh":"流动比率"},{"en":"dealer","zh":"经销商"},{"en":"debenture","zh":"信用债券"},{"en":"debt capacity","zh":"举债能力"},{"en":"debt-to-equity ratio","zh":"负债权益比率"},{"en":"declaration date","zh":"宣告日"},{"en":"dedicated hedging","zh":"专项套期保值"},{"en":"default premium","zh":"违约风险溢价"},{"en":"deferred call","zh":"延迟赎回"},{"en":"depository transfer check","zh":"存款划转支票"},{"en":"depreciation","zh":"折旧"},{"en":"dilution","zh":"股权稀释"},{"en":"dirty price","zh":"全价"},{"en":"disbursement float","zh":"付款浮差"},{"en":"discount","zh":"折价"},{"en":"discount loan","zh":"贴现贷款"},{"en":"dividend","zh":"股息"},{"en":"dividend policy","zh":"股利政策"},{"en":"dividend payout","zh":"股利支出"},{"en":"dividend yield","zh":"股息收益率"},{"en":"dividends per share","zh":"每股股利"},{"en":"duration","zh":"久期"},{"en":"earnings before interest and taxes,EBIT","zh":"息税前利润"},{"en":"earnings per share,EPS","zh":"每股收益"},{"en":"efficient capital markets","zh":"有效资本市场"},{"en":"efficient set","zh":"有效集"},{"en":"enterprise value","zh":"企业价值"},{"en":"equity multiplier","zh":"权益乘数"},{"en":"eurobonds","zh":"欧洲债券"},{"en":"eurocurrency","zh":"欧洲货币"},{"en":"event date","zh":"事件日期"},{"en":"exchange rate risk","zh":"汇率风险"},{"en":"ex-dividend date","zh":"除息日"},{"en":"exercise or striking price","zh":"执行价格"},{"en":"expected return","zh":"预期收益"},{"en":"extendable bonds","zh":"可延期债券"},{"en":"factoring","zh":"保理"},{"en":"financial distress","zh":"财务困境"},{"en":"financial leverage","zh":"财务杠杆"},{"en":"financial planning","zh":"财务规划"},{"en":"financial requirements","zh":"财务需求"},{"en":"firm commitment","zh":"包销"},{"en":"fixed costs","zh":"固定成本"},{"en":"float","zh":"浮差"},{"en":"flow to equity,FTE","zh":"权益现金流量"},{"en":"foreign bonds","zh":"外国债券"},{"en":"foreign exchange market","zh":"外汇市场"},{"en":"forward contract","zh":"远期合约"},{"en":"forward trades","zh":"远期交易"},{"en":"forward-exchange rate","zh":"远期汇率"},{"en":"free cash flow","zh":"自由现金流量"},{"en":"future contract","zh":"期货合约"},{"en":"future value","zh":"终值"},{"en":"Generally Accepted Accounting Principles,GAAP","zh":"公认会计准则"},{"en":"gilts","zh":"金边债券"},{"en":"growing annuity","zh":"增长年金"},{"en":"globalization","zh":"全球化"},{"en":"golden parachutes","zh":"金保护伞"},{"en":"goodwill","zh":"商誉"},{"en":"growing perpetuity","zh":"永续增长年金"},{"en":"growth stock portfolios","zh":"成长投资组合"},{"en":"hedging","zh":"套期保值"},{"en":"holding-period return","zh":"持有期收益率"},{"en":"immunized","zh":"利率风险（免疫）"},{"en":"income statement","zh":"损益表"},{"en":"incremental IRR","zh":"增量内部收益率"},{"en":"Monte Carlo símulation","zh":"蒙特卡罗模拟"},{"en":"mutually exclusive investments","zh":"互斥项目"},{"en":"negative covenant","zh":"消极条款"},{"en":"negotitaed offer","zh":"议价发行"},{"en":"net present value,NPV","zh":"净现值"},{"en":"net working capital","zh":"净营运资本"},{"en":"nominal cash flow","zh":"名义现金流"},{"en":"nominal interest rate","zh":"名义利率"},{"en":"noncash items","zh":"非现金项目"},{"en":"nonmarketed claims","zh":"非市场索取权"},{"en":"NPV rule","zh":"净现值法"},{"en":"off-balance-sheet financing","zh":"表外融资"},{"en":"operating cash flow","zh":"经营性现金流量"},{"en":"operating cycle","zh":"经营周期"},{"en":"operating leases","zh":"经营租赁"},{"en":"operating leverage","zh":"经营杠杆"},{"en":"opportunity cost","zh":"机会成本"},{"en":"opportunity or feasible set","zh":"机会集／可行集"},{"en":"option","zh":"期权"},{"en":"payback period rule","zh":"回收期法"},{"en":"oversubscription privilege","zh":"超额认购特权"},{"en":"payback","zh":"回收"},{"en":"payout ratio","zh":"股利支付率"},{"en":"pecking order","zh":"优先顺序"},{"en":"percentage of sales approach","zh":"销售百分比法"},{"en":"perpetuity","zh":"永续年金"},{"en":"plug","zh":"调节变量"},{"en":"portfolio","zh":"投资组合"},{"en":"posion pill","zh":"毒丸计划"},{"en":"positive covenant","zh":"积极条款"},{"en":"preferred stock","zh":"优先股"},{"en":"premium","zh":"溢价"},{"en":"prepackaged bankruptcy","zh":"预打包破产"}];
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let direction = 'en2zh';
+let currentMode = null;
+let queue = [];
+let queueIdx = 0;
+let sessionCorrect = 0;
+let sessionWrong = 0;
+let lastMode = null;
+let lastQueue = [];
+
+// Persistent state (localStorage)
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem('vocab_state') || '{}');
+  } catch(e) { return {}; }
+}
+
+function saveState(state) {
+  localStorage.setItem('vocab_state', JSON.stringify(state));
+}
+
+function getKnown() { return loadState().known || []; }
+function getUnknown() { return loadState().unknown || []; }
+function getWrongMap() { return loadState().wrongMap || {}; }
+
+function markKnown(en) {
+  const s = loadState();
+  s.known = [...new Set([...(s.known||[]), en])];
+  s.unknown = (s.unknown||[]).filter(w=>w!==en);
+  saveState(s); updateStats();
+}
+
+function markUnknown(en) {
+  const s = loadState();
+  s.unknown = [...new Set([...(s.unknown||[]), en])];
+  saveState(s); updateStats();
+}
+
+function addWrong(en, zh) {
+  const s = loadState();
+  if (!s.wrongMap) s.wrongMap = {};
+  s.wrongMap[en] = { en, zh, times: (s.wrongMap[en]?.times||0)+1 };
+  saveState(s); updateStats();
+}
+
+function clearWrong(en) {
+  const s = loadState();
+  if (s.wrongMap) delete s.wrongMap[en];
+  saveState(s); updateStats();
+}
+
+function updateStats() {
+  const known = getKnown().length;
+  const unknown = getUnknown().length;
+  const wrong = Object.keys(getWrongMap()).length;
+  document.getElementById('stat-known').textContent = known;
+  document.getElementById('stat-unknown').textContent = unknown;
+  document.getElementById('stat-wrong').textContent = wrong;
+}
+
+// ════════════════════════════════════════
+// SCREENS
+// ════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  if (id === 'wronglist') renderWrongList();
+  if (id === 'wordlist') renderWordList();
+}
+
+function goHome() {
+  showScreen('home');
+  updateStats();
+}
+
+// ════════════════════════════════════════
+// DIRECTION
+// ════════════════════════════════════════
+function setDir(d) {
+  direction = d;
+  document.querySelectorAll('.dir-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['en2zh','zh2en','mixed'][i] === d);
+  });
+}
+
+// ════════════════════════════════════════
+// MODE STARTERS
+// ════════════════════════════════════════
+function startMode(mode) {
+  currentMode = mode;
+  sessionCorrect = 0;
+  sessionWrong = 0;
+  lastMode = mode;
+
+  if (mode === 'wrong') {
+    const wm = getWrongMap();
+    const entries = Object.values(wm);
+    if (!entries.length) { showToast('错题本为空！先去练习吧 😊'); return; }
+    queue = entries.map(e => ({en:e.en, zh:e.zh}));
+  } else {
+    queue = shuffle([...VOCAB]);
+  }
+
+  lastQueue = [...queue];
+  queueIdx = 0;
+  showScreen('game');
+  renderGameLabels();
+  renderCard();
+}
+
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function renderGameLabels() {
+  const labels = {flash:'闪卡模式', mcq:'选择题', spell:'拼写挑战', kn:'认识度分类', wrong:'错题本复习'};
+  document.getElementById('game-mode-label').textContent = labels[currentMode] || '';
+  document.getElementById('prog-tot').textContent = queue.length;
+}
+
+function updateProgress() {
+  document.getElementById('prog-cur').textContent = queueIdx + 1;
+  const pct = (queueIdx / queue.length) * 100;
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+// ════════════════════════════════════════
+// CARD RENDERING
+// ════════════════════════════════════════
+function renderCard() {
+  if (queueIdx >= queue.length) {
+    showResults();
+    return;
+  }
+  updateProgress();
+  const word = queue[queueIdx];
+  const body = document.getElementById('game-body');
+
+  const dir = direction === 'mixed'
+    ? (Math.random() > 0.5 ? 'en2zh' : 'zh2en')
+    : direction;
+
+  const question = dir === 'en2zh' ? word.en : word.zh;
+  const answer = dir === 'en2zh' ? word.zh : word.en;
+  const dirLabel = dir === 'en2zh' ? '英 → 中' : '中 → 英';
+
+  if (currentMode === 'flash') renderFlash(body, question, answer, dirLabel, word.en);
+  else if (currentMode === 'mcq') renderMCQ(body, question, answer, dir, word.en);
+  else if (currentMode === 'spell') renderSpell(body, question, answer, dir, word.en);
+  else if (currentMode === 'kn') renderKN(body, question, answer, dirLabel, word.en);
+  else if (currentMode === 'wrong') renderMCQ(body, question, answer, dir, word.en);
+}
+
+// ── FLASH ──
+function renderFlash(body, question, answer, dirLabel, wordEn) {
+  body.innerHTML = `
+    <div class="flashcard" id="fc">
+      <div class="swipe-label unknown">✗ 不会</div>
+      <div class="swipe-label know">✓ 会了</div>
+      <div class="card-direction">${dirLabel}</div>
+      <div class="card-question">${question}</div>
+      <div class="card-hint">点击"显示答案"查看翻译</div>
+      <div class="card-answer" id="card-ans">${answer}</div>
+    </div>
+    <button class="reveal-btn" id="reveal-btn" onclick="revealFlash()">显示答案</button>
+    <div id="flash-btns" style="display:none;width:100%;max-width:640px">
+      <div class="kn-buttons">
+        <button class="kn-btn know" onclick="flashNext(true,'${wordEn}')">✓ 答对了</button>
+        <button class="kn-btn unknown" onclick="flashNext(false,'${wordEn}')">✗ 答错了</button>
+      </div>
+    </div>
+    <div class="kb-hint"><kbd>Space</kbd> 显示答案 &nbsp; <kbd>→</kbd> 答对 &nbsp; <kbd>←</kbd> 答错</div>
+    <div class="swipe-hint">← 左滑不认识 &nbsp;·&nbsp; 右滑认识 →</div>
+  `;
+}
+
+function revealFlash() {
+  document.getElementById('card-ans').classList.add('visible');
+  document.getElementById('reveal-btn').style.display = 'none';
+  document.getElementById('flash-btns').style.display = 'block';
+}
+
+function flashNext(correct, wordEn) {
+  if (correct) {
+    sessionCorrect++;
+    document.getElementById('fc').classList.add('correct');
+  } else {
+    sessionWrong++;
+    const word = queue[queueIdx];
+    addWrong(word.en, word.zh);
+    document.getElementById('fc').classList.add('wrong');
+  }
+  setTimeout(() => { queueIdx++; renderCard(); }, 350);
+}
+
+// ── MCQ ──
+function renderMCQ(body, question, answer, dir, wordEn) {
+  // Generate 3 wrong options
+  const others = VOCAB.filter(w => w.en !== wordEn);
+  const wrongs = shuffle(others).slice(0, 3).map(w => dir === 'en2zh' ? w.zh : w.en);
+  const opts = shuffle([answer, ...wrongs]);
+
+  body.innerHTML = `
+    <div class="flashcard" id="fc">
+      <div class="card-direction">${dir==='en2zh'?'英 → 中':'中 → 英'}</div>
+      <div class="card-question">${question}</div>
+    </div>
+    <div class="options-grid" id="opts-grid">
+      ${opts.map((o,i) => `<button class="option-btn" id="opt-${i}" onclick="checkMCQ(this,'${esc(o)}','${esc(answer)}','${esc(wordEn)}')">${o}</button>`).join('')}
+    </div>
+    <div class="kb-hint"><kbd>1</kbd>-<kbd>4</kbd> 快速选择</div>
+  `;
+}
+
+function esc(s) { return s.replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
+
+function checkMCQ(btn, chosen, correct, wordEn) {
+  const grid = document.getElementById('opts-grid');
+  grid.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+  });
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    sessionCorrect++;
+    document.getElementById('fc').classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+    sessionWrong++;
+    const word = queue[queueIdx];
+    addWrong(word.en, word.zh);
+    document.getElementById('fc').classList.add('wrong');
+  }
+  setTimeout(() => { queueIdx++; renderCard(); }, 900);
+}
+
+// ── SPELL ──
+function renderSpell(body, question, answer, dir, wordEn) {
+  const isEn2zh = dir === 'en2zh';
+  // In spell mode, always ask for the English term (harder!)
+  const q = isEn2zh ? question : answer;
+  const a = isEn2zh ? answer : question;
+  const realAnswer = isEn2zh ? a : q; // always spell the english
+  // Actually: show Chinese, type English
+  const showQ = queue[queueIdx].zh;
+  const expectA = queue[queueIdx].en.toLowerCase().trim();
+
+  body.innerHTML = `
+    <div class="flashcard" id="fc">
+      <div class="card-direction">根据中文，拼写英文术语</div>
+      <div class="card-question" style="font-family:'Noto Serif SC',serif">${showQ}</div>
+    </div>
+    <div class="spell-input-wrap">
+      <input class="spell-input" id="spell-inp" placeholder="输入英文术语..." autocomplete="off" autocorrect="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter')checkSpell('${esc(expectA)}','${esc(queue[queueIdx].en)}','${esc(queue[queueIdx].zh)}')">
+      <button class="spell-submit" onclick="checkSpell('${esc(expectA)}','${esc(queue[queueIdx].en)}','${esc(queue[queueIdx].zh)}')">↵</button>
+    </div>
+    <div class="spell-feedback" id="spell-fb"></div>
+    <div class="kb-hint"><kbd>Enter</kbd> 确认</div>
+  `;
+  document.getElementById('spell-inp').focus();
+}
+
+function checkSpell(expected, originalEn, zh) {
+  const inp = document.getElementById('spell-inp');
+  const typed = inp.value.toLowerCase().trim();
+  const fb = document.getElementById('spell-fb');
+
+  if (!typed) return;
+
+  // Allow minor tolerance (1 char difference for long words)
+  const isCorrect = typed === expected;
+
+  inp.disabled = true;
+  if (isCorrect) {
+    inp.classList.add('correct');
+    fb.className = 'spell-feedback correct';
+    fb.textContent = '✓ 正确！';
+    sessionCorrect++;
+    document.getElementById('fc').classList.add('correct');
+    setTimeout(() => { queueIdx++; renderCard(); }, 700);
+  } else {
+    inp.classList.add('wrong');
+    fb.className = 'spell-feedback wrong';
+    fb.innerHTML = `✗ 正确答案：<strong style="color:var(--gold-light)">${originalEn}</strong>`;
+    sessionWrong++;
+    addWrong(originalEn, zh);
+    document.getElementById('fc').classList.add('wrong');
+    setTimeout(() => { queueIdx++; renderCard(); }, 1800);
+  }
+}
+
+// ── KNOW/NOT ──
+function renderKN(body, question, answer, dirLabel, wordEn) {
+  body.innerHTML = `
+    <div class="flashcard" id="fc">
+      <div class="swipe-label unknown">✗ 不认识</div>
+      <div class="swipe-label know">✓ 认识</div>
+      <div class="card-direction">${dirLabel}</div>
+      <div class="card-question">${question}</div>
+      <div class="card-answer" id="card-ans">${answer}</div>
+    </div>
+    <div class="kn-buttons" style="max-width:640px;width:100%">
+      <button class="kn-btn unknown" onclick="knNext(false,'${esc(wordEn)}')">✗ 不认识</button>
+      <button class="kn-btn know" onclick="knNext(true,'${esc(wordEn)}')">✓ 认识</button>
+    </div>
+    <div class="kb-hint"><kbd>→</kbd> 认识 &nbsp; <kbd>←</kbd> 不认识</div>
+    <div class="swipe-hint">← 左滑不认识 &nbsp;·&nbsp; 右滑认识 →</div>
+  `;
+  // Auto show answer in KN mode
+  document.getElementById('card-ans').classList.add('visible');
+}
+
+function knNext(know, wordEn) {
+  if (know) {
+    markKnown(wordEn);
+    sessionCorrect++;
+    document.getElementById('fc').classList.add('correct');
+  } else {
+    markUnknown(wordEn);
+    sessionWrong++;
+    document.getElementById('fc').classList.add('wrong');
+  }
+  setTimeout(() => { queueIdx++; renderCard(); }, 300);
+}
+
+// ════════════════════════════════════════
+// RESULTS
+// ════════════════════════════════════════
+function showResults() {
+  const total = sessionCorrect + sessionWrong;
+  const pct = total > 0 ? Math.round((sessionCorrect/total)*100) : 0;
+
+  document.getElementById('res-pct').textContent = pct + '%';
+  document.getElementById('res-correct').textContent = sessionCorrect;
+  document.getElementById('res-wrong').textContent = sessionWrong;
+  document.getElementById('res-total').textContent = total;
+
+  const trophy = pct >= 90 ? '🏆' : pct >= 70 ? '🥈' : pct >= 50 ? '🥉' : '📖';
+  const title = pct >= 90 ? '太棒了！' : pct >= 70 ? '不错！继续加油！' : pct >= 50 ? '继续努力！' : '多加练习！';
+  document.getElementById('res-trophy').textContent = trophy;
+  document.getElementById('res-title').textContent = title;
+
+  document.getElementById('prog-fill').style.width = '100%';
+  showScreen('results');
+}
+
+function retryMode() {
+  if (lastMode) startMode(lastMode);
+}
+
+function retryWrong() {
+  startMode('wrong');
+}
+
+// ════════════════════════════════════════
+// WRONG LIST
+// ════════════════════════════════════════
+function renderWrongList() {
+  const wm = getWrongMap();
+  const entries = Object.values(wm).sort((a,b) => b.times-a.times);
+  const el = document.getElementById('wrong-words-list');
+
+  if (!entries.length) {
+    el.innerHTML = `<div class="empty-state"><span class="icon">🎉</span><p>错题本为空，太棒了！</p></div>`;
+    return;
+  }
+
+  el.innerHTML = entries.map(e => `
+    <div class="wrong-word-item">
+      <div class="en">${e.en}</div>
+      <div class="zh">${e.zh}</div>
+      <div class="times">错 ${e.times} 次</div>
+    </div>
+  `).join('');
+}
+
+function clearWrongList() {
+  const s = loadState();
+  s.wrongMap = {};
+  saveState(s);
+  updateStats();
+  renderWrongList();
+  showToast('错题本已清空');
+}
+
+// ════════════════════════════════════════
+// WORD LIST
+// ════════════════════════════════════════
+function renderWordList(filter='') {
+  const fl = filter.toLowerCase();
+  const filtered = fl ? VOCAB.filter(w => w.en.toLowerCase().includes(fl) || w.zh.includes(fl)) : VOCAB;
+
+  document.getElementById('word-table').innerHTML = filtered.map(w => `
+    <div class="word-row">
+      <div class="en">${highlight(w.en, fl)}</div>
+      <div class="zh">${highlight(w.zh, fl)}</div>
+    </div>
+  `).join('');
+}
+
+function highlight(text, term) {
+  if (!term) return text;
+  const idx = text.toLowerCase().indexOf(term);
+  if (idx < 0) return text;
+  return text.slice(0,idx) + `<mark style="background:var(--gold-dim);color:var(--text);border-radius:2px">${text.slice(idx,idx+term.length)}</mark>` + text.slice(idx+term.length);
+}
+
+function filterWords(val) {
+  renderWordList(val);
+}
+
+// ════════════════════════════════════════
+// KEYBOARD
+// ════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  const active = document.querySelector('.screen.active')?.id;
+
+  if (active === 'game') {
+    // Spell mode: don't intercept
+    if (document.getElementById('spell-inp')) return;
+
+    if (e.key === ' ' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const reveal = document.getElementById('reveal-btn');
+      if (reveal) reveal.click();
+    }
+    if (e.key === 'ArrowRight') {
+      const know = document.querySelector('.kn-btn.know');
+      if (know) know.click();
+      flashNext && document.getElementById('flash-btns')?.style.display !== 'none' && flashNext(true, queue[queueIdx]?.en);
+    }
+    if (e.key === 'ArrowLeft') {
+      const unkn = document.querySelector('.kn-btn.unknown');
+      if (unkn) unkn.click();
+    }
+    // 1-4 for MCQ
+    if (['1','2','3','4'].includes(e.key)) {
+      const btns = document.querySelectorAll('.option-btn:not(:disabled)');
+      if (btns[parseInt(e.key)-1]) btns[parseInt(e.key)-1].click();
+    }
+  }
+});
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.getElementById('total-count').textContent = VOCAB.length;
+document.getElementById('wl-count').textContent = VOCAB.length;
+updateStats();
+renderWordList();
+
+// ════════════════════════════════════════
+// PWA MANIFEST (inline, no server needed)
+// ════════════════════════════════════════
+(function injectManifest() {
+  const manifest = {
+    name: "金融词汇训练营",
+    short_name: "金融词汇",
+    description: "金融英语词汇背诵应用",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#0e0f14",
+    theme_color: "#0e0f14",
+    orientation: "portrait",
+    icons: [
+      { src: makeSVGIcon(), sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  document.getElementById('pwa-manifest').href = url;
+})();
+
+function makeSVGIcon() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#0e0f14"/><text x="256" y="320" text-anchor="middle" font-size="260" font-family="serif" fill="#c9a84c">金</text></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+// ════════════════════════════════════════
+// SERVICE WORKER (offline support)
+// ════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'vocab-v1';
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', self.location.href])));
+      self.skipWaiting();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+
+// ════════════════════════════════════════
+// iOS INSTALL BANNER
+// ════════════════════════════════════════
+(function checkInstallPrompt() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('install_dismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    setTimeout(() => {
+      document.getElementById('install-banner').classList.add('show');
+    }, 3000);
+  }
+})();
+
+function dismissBanner() {
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('install_dismissed', '1');
+}
+
+// ════════════════════════════════════════
+// SWIPE GESTURES
+// ════════════════════════════════════════
+let touchStartX = 0, touchStartY = 0, touchActive = false;
+
+document.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchActive = true;
+}, {passive: true});
+
+document.addEventListener('touchmove', (e) => {
+  if (!touchActive) return;
+  const dx = e.touches[0].clientX - touchStartX;
+  const dy = e.touches[0].clientY - touchStartY;
+  if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
+
+  const fc = document.getElementById('fc');
+  if (!fc) return;
+
+  const active = document.querySelector('.screen.active')?.id;
+  if (active !== 'game') return;
+
+  // Show swipe indicators
+  const knowLabel = fc.querySelector('.swipe-label.know');
+  const unknLabel = fc.querySelector('.swipe-label.unknown');
+
+  if (dx > 30) {
+    fc.classList.add('swipe-right');
+    fc.classList.remove('swipe-left');
+    if (knowLabel) knowLabel.style.opacity = Math.min((dx-30)/80, 1);
+    if (unknLabel) unknLabel.style.opacity = 0;
+  } else if (dx < -30) {
+    fc.classList.add('swipe-left');
+    fc.classList.remove('swipe-right');
+    if (unknLabel) unknLabel.style.opacity = Math.min((-dx-30)/80, 1);
+    if (knowLabel) knowLabel.style.opacity = 0;
+  } else {
+    fc.classList.remove('swipe-right','swipe-left');
+    if (knowLabel) knowLabel.style.opacity = 0;
+    if (unknLabel) unknLabel.style.opacity = 0;
+  }
+}, {passive: true});
+
+document.addEventListener('touchend', (e) => {
+  if (!touchActive) return;
+  touchActive = false;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+
+  if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 60) {
+    const fc = document.getElementById('fc');
+    if (fc) { fc.classList.remove('swipe-right','swipe-left'); }
+    return;
+  }
+
+  const active = document.querySelector('.screen.active')?.id;
+  if (active !== 'game') return;
+
+  // Only handle swipe on flash/kn modes
+  if (currentMode === 'flash') {
+    // Must be revealed first
+    if (!document.getElementById('card-ans')?.classList.contains('visible')) {
+      revealFlash();
+      const fc = document.getElementById('fc');
+      if (fc) fc.classList.remove('swipe-right','swipe-left');
+      return;
+    }
+    if (dx > 60) flashNext(true, queue[queueIdx]?.en);
+    else if (dx < -60) flashNext(false, queue[queueIdx]?.en);
+  } else if (currentMode === 'kn') {
+    if (dx > 60) knNext(true, queue[queueIdx]?.en);
+    else if (dx < -60) knNext(false, queue[queueIdx]?.en);
+  }
+}, {passive: true});
+</script>
+</body>
+</html>
